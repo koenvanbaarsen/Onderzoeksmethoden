@@ -12,7 +12,7 @@ namespace Elo_Simulation
         // Constants
         const int K = 32;
         const int noRounds = 100;
-        const int noPlayers = 6;
+        const int noPlayers = 32;
         const int beginRating = 1000;
         const string outputFolder = @"E:\Mijn documenten\Universiteit\Jaar 4\Periode C\Onderzoeksmethoden\Repository\Simulations\";
 
