@@ -12,27 +12,45 @@ namespace Elo_Simulation
         // Constants
         const int K = 32;
         const int noRounds = 100;
-        const int noPlayers = 32;
+        const int noPlayers = 200;
         const int beginRating = 1000;
         const string outputFolder = @"E:\Mijn documenten\Universiteit\Jaar 4\Periode C\Onderzoeksmethoden\Repository\Simulations\";
+
+        const int NormalSteps = 150;
+        const int NormalMaxValue = 2100;
 
         // Random number instantiation
         private readonly Random _rnd = new Random();
 
         // Unique ID for a simulation
-        private string _id;
+        public int id;
+        public Random _random;
 
-        public Simulation(string simulationID)
+        public Simulation(int simulationID, Random random)
         {
-            _id = simulationID;
+            id = simulationID;
+            _random = random;
         }
 
-        public void Simulate()
+        private int RandomSkillFromNormal()
+        {
+            int count = 0;
+            int val = 0;
+
+            while (++count * NormalSteps <= NormalMaxValue) val += _random.Next(NormalSteps);
+
+            return val;
+        }
+
+
+        public string Simulate()
         {
             // Initialize players
             List<Player> players = new List<Player>();
             for (int i = 0; i < noPlayers; i++)
-                players.Add(new Player(i, 1000 + 1000 * i / noPlayers, beginRating));
+            {
+                players.Add(new Player(i, RandomSkillFromNormal(), beginRating));
+            }
 
             //Keep a list of the rounds
             List<Match> matches = new List<Match>();
@@ -58,20 +76,26 @@ namespace Elo_Simulation
                 }
             }
 
-            //Convert the rounds to a table
-
             //Start with the header
-            string csvString = "PlayervsPlayer";
+            string resultCsvString = "PlayervsPlayer";
             for (int i = 0; i < noRounds; i++)
             {
-                csvString += string.Format(";Round{0}", i);
+                resultCsvString += string.Format(";Round{0}", i);
             }
-            csvString += Environment.NewLine;
+            resultCsvString += Environment.NewLine;
+
+            string skillsCsvString = string.Empty;
 
             //And the body of the table
             matches.OrderBy(x => x.PlayerA.id).ThenBy(x => x.PlayerB.id).ThenBy(x => x.RoundNumber).ToList();
             foreach (Player playerA in players)
             {
+                //Write the skill level
+                skillsCsvString += playerA.skill;
+                skillsCsvString += Environment.NewLine;
+
+                //Write away the score
+                Console.WriteLine(string.Format("Ordering player {0} for simulation {1}", playerA.id, id));
                 for (int j = playerA.id + 1; j < noPlayers; j++)
                 {
                     Player playerB = players[j];
@@ -83,16 +107,19 @@ namespace Elo_Simulation
                         newEntry += string.Format(";{0}", selectedMatch.EloScore);
                     }
 
-                    csvString += newEntry;
-                    csvString += Environment.NewLine;
+                    resultCsvString += newEntry;
+                    resultCsvString += Environment.NewLine;
                 }
             }
 
-            //Write away the string
-            WriteToFile(csvString, _id);
+            //Write away the strings
+            WriteToFile(resultCsvString, "simulation_" + id.ToString());
+            WriteToFile(skillsCsvString, "skills_" + id.ToString());
 
             // Keep the console open, notify the user that something happened and append text to the file.
-            Console.WriteLine(string.Format("The results of simulation {0} have been written to: {1}", _id, outputFolder));
+            Console.WriteLine(string.Format("The results of simulation {0} have been written to: {1}", id, outputFolder));
+
+            return resultCsvString;
         }
 
         void WriteToFile(string text, string filename)
@@ -101,6 +128,7 @@ namespace Elo_Simulation
             using (StreamWriter sw = new StreamWriter(path, true))
                 sw.Write(text);
         }
+
 
         int Game(Player a, Player b)
         // Play a game with 2 players and calculate who wins based on skill.
