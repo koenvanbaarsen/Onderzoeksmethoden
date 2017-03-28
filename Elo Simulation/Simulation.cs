@@ -10,9 +10,7 @@ namespace Elo_Simulation
     class Simulation
     {
         // Constants
-        const int K = 32;
-        const int noRounds = 100;
-        const int noPlayers = 200;
+        const int noPlayers = 10;
         const int beginRating = 1000;
         const string outputFolder = @"E:\Mijn documenten\Universiteit\Jaar 4\Periode C\Onderzoeksmethoden\Repository\Simulations\";
 
@@ -22,14 +20,17 @@ namespace Elo_Simulation
         // Random number instantiation
         private readonly Random _rnd = new Random();
 
-        // Unique ID for a simulation
         public int id;
+        int _k = 32;
         public Random _random;
+        int _noRounds = 100;
 
-        public Simulation(int simulationID, Random random)
+        public Simulation(int simulationID, Random random, int k, int noRounds)
         {
             id = simulationID;
             _random = random;
+            _k = k;
+            _noRounds = noRounds;
         }
 
         private int RandomSkillFromNormal()
@@ -45,18 +46,24 @@ namespace Elo_Simulation
 
         public string Simulate()
         {
+            //Array that will save the matches
+            List<Match>[,] matchArray = new List<Match>[noPlayers, noPlayers];
+
             // Initialize players
             List<Player> players = new List<Player>();
             for (int i = 0; i < noPlayers; i++)
             {
                 players.Add(new Player(i, RandomSkillFromNormal(), beginRating));
+
+                //Initialize the lists where the matches will be saved
+                for (int k = 0; k < noPlayers; k++)
+                {
+                    matchArray[i, k] = new List<Match>();
+                }
             }
 
-            //Keep a list of the rounds
-            List<Match> matches = new List<Match>();
-
             // Play a certain amount of rounds
-            for (int currentRound = 0; currentRound < noRounds; currentRound++)
+            for (int currentRound = 0; currentRound < _noRounds; currentRound++)
             {
                 foreach (Player playerA in players)
                 {
@@ -71,60 +78,67 @@ namespace Elo_Simulation
 
                         //Create a variable for said match, and add it to the current round
                         Match match = new Match(currentRound, playerA, playerB, playerB.elo);
-                        matches.Add(match);
+                        matchArray[playerA.id, playerB.id].Add(match);
                     }
                 }
+                if (currentRound % 10 == 0)
+                    Console.WriteLine("K:" + _k + " initialized round " + currentRound);
             }
 
             //Start with the header
-            string resultCsvString = "PlayervsPlayer";
-            for (int i = 0; i < noRounds; i++)
+            StringBuilder resultHeader = new StringBuilder();
+            resultHeader.Append("PlayervsPlayer");
+            for (int i = 0; i < _noRounds; i++)
             {
-                resultCsvString += string.Format(";Round{0}", i);
+                resultHeader.Append(string.Format(";Round{0}", i));
             }
-            resultCsvString += Environment.NewLine;
+            resultHeader.Append(Environment.NewLine);
 
-            string skillsCsvString = string.Empty;
+            StringBuilder resultCsvString = new StringBuilder();
+            StringBuilder skillsCsvString = new StringBuilder();
 
             //And the body of the table
-            matches.OrderBy(x => x.PlayerA.id).ThenBy(x => x.PlayerB.id).ThenBy(x => x.RoundNumber).ToList();
             foreach (Player playerA in players)
             {
                 //Write the skill level
-                skillsCsvString += playerA.skill;
-                skillsCsvString += Environment.NewLine;
+                skillsCsvString.Append(playerA.skill);
+                skillsCsvString.Append(Environment.NewLine);
 
                 //Write away the score
-                Console.WriteLine(string.Format("Ordering player {0} for simulation {1}", playerA.id, id));
+                if (playerA.id % 10 == 0)
+                    Console.WriteLine(string.Format("K:" + _k + " Ordering player {0} for simulation {1}", playerA.id, id));
                 for (int j = playerA.id + 1; j < noPlayers; j++)
                 {
                     Player playerB = players[j];
                     string newEntry = string.Format("{0}vs{1}", playerA.id, playerB.id);
 
-                    var selectedMatches = matches.Where(x => x.PlayerA.id == playerA.id && x.PlayerB.id == playerB.id).OrderBy(x => x.RoundNumber).ToList();
+                    var selectedMatches = matchArray[playerA.id, playerB.id].OrderBy(x => x.RoundNumber).ToList();
                     foreach (var selectedMatch in selectedMatches)
                     {
                         newEntry += string.Format(";{0}", selectedMatch.EloScore);
                     }
 
-                    resultCsvString += newEntry;
-                    resultCsvString += Environment.NewLine;
+                    resultCsvString.Append(newEntry);
+                    resultCsvString.Append(Environment.NewLine);
                 }
             }
 
             //Write away the strings
-            WriteToFile(resultCsvString, "simulation_" + id.ToString());
-            WriteToFile(skillsCsvString, "skills_" + id.ToString());
+            StringBuilder resultsOutput = new StringBuilder();
+            WriteToFile(resultHeader.ToString() + resultCsvString.ToString(), "simulation_" + id.ToString());
+            WriteToFile(skillsCsvString.ToString(), "skills_" + id.ToString());
 
             // Keep the console open, notify the user that something happened and append text to the file.
-            Console.WriteLine(string.Format("The results of simulation {0} have been written to: {1}", id, outputFolder));
+            Console.WriteLine(string.Format("K:" + _k + " The results of simulation {0} have been written to: {1}", id, outputFolder));
 
-            return resultCsvString;
+            return resultCsvString.ToString();
         }
 
         void WriteToFile(string text, string filename)
         {
-            string path = string.Format(@"{0}{1}.csv", outputFolder, filename);
+            string folderForK = string.Format(@"{0}{1}\", outputFolder, _k);
+            Directory.CreateDirectory(folderForK);
+            string path = string.Format(@"{0}{1}.csv", folderForK, filename);
             using (StreamWriter sw = new StreamWriter(path, true))
                 sw.Write(text);
         }
@@ -155,12 +169,12 @@ namespace Elo_Simulation
             return Ra / (Ra + Rb);
         }
 
-        static void UpdateElo(Player winner, Player loser, double winProb)
+        void UpdateElo(Player winner, Player loser, double winProb)
         // Update the ELO Rating for loser and winner of the match.
         {
             double loseProb = 1 - winProb;
-            winner.elo = (int)Math.Round(winner.elo + K * (1 - winProb));
-            loser.elo = (int)Math.Round(loser.elo + K * (0 - loseProb));
+            winner.elo = (int)Math.Round(winner.elo + _k * (1 - winProb));
+            loser.elo = (int)Math.Round(loser.elo + _k * (0 - loseProb));
         }
     }
 }
