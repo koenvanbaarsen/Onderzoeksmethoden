@@ -10,7 +10,7 @@ namespace Elo_Simulation
     class Simulation
     {
         // Constants
-        const int noPlayers = 2000;
+        const int noPlayers = 1000;
         const int beginRating = 1000;
         const string outputFolder = @"E:\Mijn documenten\Universiteit\Jaar 4\Periode C\Onderzoeksmethoden\Repository\Simulations\";
 
@@ -49,20 +49,11 @@ namespace Elo_Simulation
 
         public string Simulate()
         {
-            //Array that will save the matches
-            List<Match>[,] matchArray = new List<Match>[noPlayers, noPlayers];
-
             // Initialize players
             List<Player> players = new List<Player>();
             for (int i = 0; i < noPlayers; i++)
             {
                 players.Add(new Player(i, RandomSkillFromNormal(), beginRating));
-
-                //Initialize the lists where the matches will be saved
-                for (int k = 0; k < noPlayers; k++)
-                {
-                    matchArray[i, k] = new List<Match>();
-                }
             }
 
             //Add player elo ratings header
@@ -91,10 +82,6 @@ namespace Elo_Simulation
 
                         //Do a match
                         Game(playerA, playerB);
-
-                        //Create a variable for said match, and add it to the current round
-                        Match match = new Match(currentRound, playerA, playerB, playerB.elo);
-                        matchArray[playerA.id, playerB.id].Add(match);
                     }
                 }
 
