@@ -9,8 +9,8 @@ namespace Elo_Simulation
 {
     class Program
     {
-        const int numberOfSimulations = 10;
-        const int noRounds = 100;
+        const int numberOfSimulations = 1;
+        const int noRounds = 250;
         static int[] kValues = new int[] { 10, 16, 24, 32, 40 };
         const string outputFolder = @"E:\Mijn documenten\Universiteit\Jaar 4\Periode C\Onderzoeksmethoden\Repository\Simulations\";
         
@@ -40,30 +40,31 @@ namespace Elo_Simulation
 
             //Do them in parallel
             Dictionary<int, string> simulationResults = new Dictionary<int, string>();
-            Parallel.ForEach(simulations, (currentSimulation) =>
+
+            foreach(var currentSimulation in simulations)
             {
                 var result = currentSimulation.Simulate();
                 simulationResults[currentSimulation.id] = result;
-            });
+            }
 
             //Start with the header
             StringBuilder allSimulationResults = new StringBuilder();
-            allSimulationResults.Append("PlayervsPlayer");
-            for (int i = 0; i < noRounds; i++)
-            {
-                allSimulationResults.Append(string.Format(";Round{0}", i));
-            }
-            allSimulationResults.Append(Environment.NewLine);
+            //allSimulationResults.Append("PlayervsPlayer");
+            //for (int i = 0; i < noRounds; i++)
+            //{
+            //    allSimulationResults.Append(string.Format(";Round{0}", i));
+            //}
+            //allSimulationResults.Append(Environment.NewLine);
 
-            //Finally combine them in the correct order
-            for (int i = 0; i < numberOfSimulations; i++)
-            {
-                allSimulationResults.Append(simulationResults[i]);
-            }
+            ////Finally combine them in the correct order
+            //for (int i = 0; i < numberOfSimulations; i++)
+            //{
+            //    allSimulationResults.Append(simulationResults[i]);
+            //}
             CombineSkills(k);
             CombineElos(k);
 
-            Console.WriteLine("Saved the combined files for K: " + k);
+            //Console.WriteLine("Saved the combined files for K: " + k);
             WriteToFile(allSimulationResults.ToString(), k, "alle_results");
         }
 
