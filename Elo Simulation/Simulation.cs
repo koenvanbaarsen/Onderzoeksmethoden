@@ -25,12 +25,15 @@ namespace Elo_Simulation
         public Random _random;
         int _noRounds = 100;
 
+        StringBuilder playerEloRatingTable;
+
         public Simulation(int simulationID, Random random, int k, int noRounds)
         {
             id = simulationID;
             _random = random;
             _k = k;
             _noRounds = noRounds;
+            playerEloRatingTable = new StringBuilder();
         }
 
         private int RandomSkillFromNormal()
@@ -62,6 +65,14 @@ namespace Elo_Simulation
                 }
             }
 
+            //Add player elo ratings header
+            playerEloRatingTable.Append(";");
+            foreach (var player in players)
+            {
+                playerEloRatingTable.Append("Player " + player.id + ";");
+            }
+            playerEloRatingTable.Append(Environment.NewLine);
+
             // Play a certain amount of rounds
             for (int currentRound = 0; currentRound < _noRounds; currentRound++)
             {
@@ -81,6 +92,13 @@ namespace Elo_Simulation
                         matchArray[playerA.id, playerB.id].Add(match);
                     }
                 }
+
+                //Output the elo ratings
+                playerEloRatingTable.Append("Round" + currentRound);
+                OutputPlayerEloRatings(players);
+                playerEloRatingTable.Append(Environment.NewLine);
+
+
                 if (currentRound % 10 == 0)
                     Console.WriteLine("K:" + _k + " initialized round " + currentRound);
             }
@@ -127,11 +145,23 @@ namespace Elo_Simulation
             StringBuilder resultsOutput = new StringBuilder();
             WriteToFile(resultHeader.ToString() + resultCsvString.ToString(), "simulation_" + id.ToString());
             WriteToFile(skillsCsvString.ToString(), "skills_" + id.ToString());
+            WriteToFile(playerEloRatingTable.ToString(), "eloratings_" + id.ToString());
 
             // Keep the console open, notify the user that something happened and append text to the file.
             Console.WriteLine(string.Format("K:" + _k + " The results of simulation {0} have been written to: {1}", id, outputFolder));
 
             return resultCsvString.ToString();
+        }
+
+        void OutputPlayerEloRatings(List<Player> players)
+        {
+            //playerEloRatingTable
+            foreach (var player in players)
+            { 
+                playerEloRatingTable.Append(";");
+                playerEloRatingTable.Append(player.elo);
+            }
+
         }
 
         void WriteToFile(string text, string filename)

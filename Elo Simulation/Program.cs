@@ -54,12 +54,14 @@ namespace Elo_Simulation
                 allSimulationResults.Append(string.Format(";Round{0}", i));
             }
             allSimulationResults.Append(Environment.NewLine);
+
             //Finally combine them in the correct order
             for (int i = 0; i < numberOfSimulations; i++)
             {
                 allSimulationResults.Append(simulationResults[i]);
             }
             CombineSkills(k);
+            CombineElos(k);
 
             Console.WriteLine("Saved the combined files for K: " + k);
             WriteToFile(allSimulationResults.ToString(), k, "alle_results");
@@ -87,6 +89,17 @@ namespace Elo_Simulation
             }
 
             WriteToFile(combinedCsv, k, "alle_skills");
+        }
+
+        static void CombineElos(int k)
+        {
+            string combinedCsv = string.Empty;
+            for (int i = 0; i < numberOfSimulations; i++)
+            {
+                combinedCsv += File.ReadAllText(string.Format(@"{0}{1}\eloratings_{2}.csv", outputFolder, k, i));
+            }
+
+            WriteToFile(combinedCsv, k, "alle_eloratings");
         }
 
         static void WriteToFile(string text, int k, string filename)
